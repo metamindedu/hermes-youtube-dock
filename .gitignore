@@ -1,0 +1,7 @@
+node_modules/
+.hermes-source/
+.env
+.env.*
+*.log
+coverage/
+.DS_Store
