@@ -10,9 +10,10 @@ import { renderToStaticMarkup } from 'react-dom/server'
 const source = await readFile(new URL('../desktop/plugin.js', import.meta.url), 'utf8')
 
 // This is a unit SDK double, not a substitute for exercising the actual Desktop.
-async function loadPlugin(locale = 'en') {
+async function loadPlugin(locale = 'en', { saved = false, removeFails = false } = {}) {
   const contributions = []
   const disposers = []
+  const storageCalls = []
   let bundles = {}
   const t = key => bundles[locale]?.[key] ?? bundles.en?.[key] ?? key
   const wrap = tag => ({ children }) => React.createElement(tag, null, children)
@@ -30,7 +31,11 @@ async function loadPlugin(locale = 'en') {
   }
   const ctx = {
     i18n: { register: value => { bundles = value }, t },
-    storage: { get: () => false }, // Existing launcher regression: explicitly opt out of manual mode.
+    storage: {
+      get: key => { storageCalls.push(['get', key]); return saved },
+      set: (key, value) => storageCalls.push(['set', key, value]),
+      remove: key => { storageCalls.push(['remove', key]); if (removeFails) throw new Error('storage unavailable') }
+    },
     register: contribution => { contributions.push(contribution); return () => {} },
     onDispose: dispose => disposers.push(dispose)
   }
@@ -49,7 +54,7 @@ async function loadPlugin(locale = 'en') {
   })
   await module.evaluate()
   module.namespace.default.register(ctx)
-  return { module: module.namespace, contributions, disposers,
+  return { module: module.namespace, contributions, disposers, storageCalls,
     render: () => renderToStaticMarkup(React.createElement(module.namespace.YouTubeMenu)) }
 }
 
@@ -105,12 +110,35 @@ test('Korean and unsupported locales use translated labels and the English fallb
   assert.match(fallback.render(), /Recommended videos/)
 })
 
-test('legacy destination has no automatic pin capture handler', async () => {
+test('one-click destination has no automatic pin capture handler', async () => {
   const plugin = await loadPlugin()
   for (const destination of plugin.module.DESTINATIONS) {
     const section = plugin.module.Destination({ destination, t: key => key })
     assert.equal(section.props.children[2].props.onClickCapture, undefined)
   }
+})
+
+test('removed beta cannot affect opening even with old saved ON or OFF', async () => {
+  for (const saved of [true, false, null, 'true']) {
+    const p = await loadPlugin('en', { saved })
+    assert.equal((p.render().match(/data-preview-markdown=/g) ?? []).length, 2)
+    assert.doesNotMatch(p.render(), /Beta|Manual tab setup|Copy address|role="switch"/)
+    assert.equal(p.module.ManualGuide, undefined)
+    assert.equal(p.module.copyDestination, undefined)
+    assert.equal(p.module.setManualGuide, undefined)
+    assert.deepEqual(p.storageCalls, [['remove', 'manualPinGuide']])
+  }
+})
+
+test('obsolete-key cleanup failure cannot break the one-click menu', async () => {
+  const p = await loadPlugin('ko', { saved: true, removeFails: true })
+  assert.equal((p.render().match(/data-preview-markdown=/g) ?? []).length, 2)
+  assert.doesNotMatch(p.render(), /베타|주소 복사|수동 탭 설정/)
+  assert.deepEqual(p.storageCalls, [['remove', 'manualPinGuide']])
+})
+
+test('production has no beta controls, clipboard, preference reads or automatic pin adapter', () => {
+  assert.doesNotMatch(source, /ManualGuide|manualGuide|setManualGuide|copyDestination|writeClipboard|storage\.(get|set)|MutationObserver|querySelector|dispatchEvent|onClickCapture/)
 })
 
 test('native Hermes decoder preserves and resolves both visible preview links', {
