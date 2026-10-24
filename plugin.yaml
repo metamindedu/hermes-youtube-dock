@@ -1,12 +1,13 @@
 name: youtube-dock
 label: YouTube Dock
-version: "1.0.0"
+version: "1.1.0-beta.1"
 author: metamindedu
 homepage: https://github.com/metamindedu/hermes-youtube-dock
 description: >-
-  Open your signed-in YouTube recommendations and Shorts in the existing Hermes
-  Desktop Browser beside your conversation. Desktop-only launcher using the
-  public plugin SDK; no agent tools, hooks, middleware, credentials or API keys.
+  YouTube Home and Shorts launcher with default-ON manual tab setup guidance.
+  Copy an address, choose a native Browser tab, and pin it yourself. Optional
+  legacy preview controls; no automatic tab selection or pinning, core patches,
+  agent tools, hooks, middleware, credentials or API keys.
 requires_hermes: ">=0.22.2"
 tags: [desktop, youtube, video, productivity]
 provides_tools: []

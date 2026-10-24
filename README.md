@@ -1,92 +1,80 @@
 # YouTube Dock for Hermes Desktop
 
-Browse **your YouTube recommendations and Shorts beside your conversation**, without opening your external browser or pasting video URLs.
+YouTube Home and Shorts beside your conversation, using Hermes' existing native Browser.
 
-A small, desktop-only launcher built with the public `@hermes/plugin-sdk`. It reuses Hermes' existing internal Browser; it is not a separate browser engine or a replacement YouTube player.
+## 1.1.0-beta.1 — manual tab setup, default ON
 
-![YouTube Dock menu in Hermes Desktop](docs/menu.png)
+This beta provides **manual setup guidance and address-copy buttons**, not automatic tab creation, selection or pinning. It replaces the unpublished automatic-pinning experiment; that adapter is not shipped. No Hermes core files are patched and no private store or core-DOM automation is used.
+
+The **Manual tab setup · Beta** switch defaults **ON**, including upgrades without a saved choice. An explicit ON/OFF choice is stored only through the plugin's namespaced SDK storage. The plugin package itself remains opt-in; these are separate settings. Changing this switch does not open, hide, pin, unpin or close a Browser tab.
 
 ## Install
 
-Requires **Hermes 0.22.2 or later** and the native Desktop app. This release was exercised on Windows 11 with Hermes 0.22.2. The SDK-based UI is not OS-specific, but macOS/Linux playback has not been manually verified.
+Requires **Hermes 0.22.2 or later** and the native Desktop app. This is a prerelease, not an automatically enabled stable catalog update.
 
-### Desktop
-
-Open the Desktop plugin installation dialog (**Capabilities → Plugins → Install from Git**), enter:
-
-```text
-https://github.com/metamindedu/hermes-youtube-dock
-```
-
-Select the Desktop component and confirm installation. Enable **YouTube Dock** in **Capabilities → Plugins** if it is not already enabled. Public packages are opt-in; the plugin itself defaults to disabled.
-
-### CLI
+In **Capabilities → Plugins → Install from Git**, use `https://github.com/metamindedu/hermes-youtube-dock`, select the Desktop component, and enable **YouTube Dock**. Or use:
 
 ```sh
-hermes plugins install https://github.com/metamindedu/hermes-youtube-dock
+hermes plugins install metamindedu/hermes-youtube-dock --ref v1.1.0-beta.1
 ```
 
-Then open Hermes Desktop, rescan plugins if necessary, and enable **YouTube Dock**. There is no Python backend to configure or enable.
+Then use **Capabilities → Plugins → Rescan** and enable the Desktop plugin if needed. No Python backend, agent tools or dependencies are required to run it. For reproducible rollout, replace the tag with the full commit SHA shown in the release. Catalog availability and maintainer approval are separate from this Git prerelease.
 
-A catalog submission is pending; installation by the short catalog name is not available until the maintainers merge the entry and publish the catalog.
+## Use: default-ON manual mode
 
-## Use
+1. Open **▶ YouTube** in the titlebar or **YouTube** in the command palette.
+2. Select a native **Browser** tab yourself. Create a blank Browser tab first if existing pages must remain unchanged.
+3. Click **Copy address** under Home or Shorts, then paste the address into **that tab's own address bar** and press Enter. If clipboard access is unavailable, select/copy the displayed address manually.
+4. Right-click that Browser tab and choose **Pin to workspace**. If it says **Unpin from workspace**, it is already pinned; do not click that item to pin it again.
+5. Drag the tab into the desired split. Workspace pinning is the host mechanism for retaining visibility across chat switches in the same profile.
 
-1. Click **▶ YouTube** in the titlebar, or search **YouTube** in the command palette.
-2. Under **Recommended videos** or **Shorts**, click **Open preview**.
-3. Browse, select and watch videos inside the native Browser next to the chat. No video URL is needed.
-4. Drag the Browser tab or its panel boundary to arrange/resize it. Existing Hermes Browser tab actions handle pinning and opening a separate Hermes window.
+The plugin cannot verify that you selected, pinned or navigated the intended tab, and does not claim playback completion. There is no fictitious “pin verified” indicator. The copy success message confirms only the SDK clipboard result.
 
-English and Korean UI strings are included. Other locales fall back to English.
+### Optional legacy mode: switch OFF
 
-### Important behavior and limitations
+OFF restores the original SDK-rendered **Open preview / Hide** controls for Home and Shorts. The native Browser chooses which vessel to reuse; opening can navigate an existing tab. **Hide** hides/closes that preview, even if the page subsequently navigated elsewhere. Neither mode automatically pins a tab. Turning OFF does not undo manual pinning or close a video.
 
-- **The preview buttons are toggles.** An already-open original destination shows **Hide**, even if you navigated from Home to a video. Clicking it hides that Browser tab; clicking **Open preview** afterward opens the destination again. To return Home without hiding the tab, use YouTube's own logo inside the page.
-- The existing native Browser decides which tab to reuse. This plugin does not create or manage its own browser session.
-- A **dedicated PIP button is not included**. This release uses Hermes' docked Browser and its existing separate-window feature; neither is a promise of always-on-top PIP.
-- An existing internal-Browser login can be reused. The plugin does not copy your external Chrome/Edge login. Google may restrict sign-in on embedded browsers; sign-in and playback are owned by the host and YouTube, not bypassed by this plugin.
-- YouTube region, account, age and playback restrictions still apply. No Premium features or ad blocking are provided.
-- Disabling this launcher removes its menu and command, **not** an already-open Browser/video tab. Close that tab to stop playback and release its resources.
-- Keeping an external browser closed may help your workflow, but **no measured CPU or RAM savings are claimed**.
-- The native preview cards and `#preview/` link behavior depend on the host's current SDK-rendered Markdown pipeline. A scoped stylesheet hides the unrelated Download button only inside the plugin's own cards; no other app markup is queried or modified.
+### Limitations
+
+- Pinning is **visibility**, not exclusive ownership: later ordinary URL previews can reuse a pinned Browser. This beta does not reserve a dedicated vessel or provide cross-profile persistence.
+- Layout, playback, sign-in and the Browser guest are host/YouTube responsibilities. No credentials are read or copied from an external browser. Region/account/age restrictions and embedded-browser sign-in restrictions still apply.
+- No dedicated always-on-top PIP button, ad blocking, Premium bypass or measured CPU/RAM savings are claimed.
+- Disabling the launcher removes its menu/command, not an already-open page. Close the Browser tab yourself to stop it.
+- Host updates can change native menus or preview-card behavior. The plugin lives outside the core update tree; future compatibility is not guaranteed.
+- Windows is the native manual-QA target. Portable CI does not establish live macOS/Linux player or layout support.
+
+English and Korean strings are included; other locales fall back to English. `docs/menu.png` is the historical 1.0.0 launcher screenshot, not evidence of this beta's UI or playback.
 
 ## Privacy and permissions
 
-| Surface | What happens |
+| Surface | Behavior |
 | --- | --- |
-| Third-party network | After an explicit click, the native Browser loads YouTube and its normal service/CDN requests. YouTube's own privacy terms apply. |
-| Credentials | None requested or read by this plugin. Any saved sign-in remains managed by the native Browser. |
-| Local data | No cookie, account, recommendation, watch-history or filesystem reads. No plugin persistence. |
-| Agent capabilities | No tools, hooks, middleware, model calls or environment variables. |
-| Native execution | No shell commands, backend service, extra browser process launcher, background worker or polling loop. |
-| Telemetry | None. |
-| Updates | No self-updater or remote code loader. Catalog versions, if accepted, are exact-SHA pinned and updated through Hermes. |
+| Clipboard | Explicit Copy address click writes only one fixed YouTube URL through `ctx.os.writeClipboard`; no clipboard reads. |
+| Local data | One boolean `manualPinGuide` in plugin-scoped SDK storage; no direct global storage/filesystem access. A storage failure leaves the current session's choice usable but persistence is not guaranteed. |
+| Browser/network | No page opens at plugin load or on switching modes. Manual mode requires the user's address-bar navigation. Legacy mode opens only after the user clicks its preview control. YouTube's normal third-party requests then apply. |
+| Native UI | No core-markup queries, automatic menu clicks, private state, observers, raw webviews or guest scripts. Legacy card styling is scoped to the plugin's own rendered subtree. |
+| Credentials | No cookie, account, watch-history or recommendation reads. Native Browser login remains host-managed. |
+| Agent/runtime | No tools, hooks, middleware, model calls, shell commands, backend, background jobs or polling. |
+| Updates/telemetry | No self-updater, remote code loader or telemetry. |
 
 ## Development and tests
 
-Node is required for **development tests only**, not to run the installed plugin.
+Node is required only for tests:
 
 ```sh
 npm ci --ignore-scripts
 npm run check
-```
-
-The portable unit tests use real React server rendering with a small, explicitly mocked SDK. To additionally verify round-tripping through the real Hermes native preview decoder, set `HERMES_SOURCE_ROOT` to a Hermes source checkout before running the same gate:
-
-```sh
 HERMES_SOURCE_ROOT=/path/to/hermes-agent npm run check
 ```
 
-CI runs both on Windows and Linux against a pinned Hermes 0.22.2 source revision. Tests do not read or write a user's Hermes profile. Actual Desktop verification additionally covered the titlebar menu, signed-in Home feed, Shorts navigation and playback. The screenshot above is a crop of only the plugin menu; no account details or recommendation feed are published.
+Portable tests use real React server rendering with explicit SDK doubles. They cover default ON, stored OFF and reload, switch event wiring, invalid storage values, storage failures, fixed address copying, clipboard failure/unload, translations, legacy controls and absence of automatic pin code. The optional integration compiles the actual host preview-link decoder read-only; it is not a native Browser/player test. CI uses Windows and Ubuntu with a pinned Hermes 0.22.2 decoder checkout. Test passes do not imply automatic tab management or live playback acceptance. Release notes distinguish native manual checks from test doubles.
+
+## 한국어
+
+**수동 탭 설정 · 베타는 기본 ON**입니다. 메뉴에서 주소를 복사하고, 직접 선택한 Browser 탭의 주소창에 붙여넣은 뒤 탭 메뉴의 **Pin to workspace**로 고정하세요. 이미 **Unpin from workspace**로 표시되면 다시 누르지 마세요. 코어·다른 탭을 자동 조작하거나 고정 완료를 추정하지 않습니다.
+
+옵션을 OFF로 바꾸면 기존 **Open preview / Hide** 버튼이 나타납니다. 이 방식은 기존 Browser 탭을 재사용할 수 있습니다. 옵션 변경만으로 이미 열린 탭을 닫거나 고정을 해제하지는 않습니다. 고정은 같은 프로필의 대화 전환 시 가시성을 위한 기능이며 다른 미리보기의 탭 재사용을 막지는 않습니다.
 
 ## Support and license
 
-Report bugs through [GitHub Issues](https://github.com/metamindedu/hermes-youtube-dock/issues). Include Hermes version, OS, and whether the native Browser itself can play the same page. Do not include cookies, tokens or account credentials.
-
-[MIT](LICENSE). An independent community plugin, not affiliated with or endorsed by YouTube, Google or Nous Research.
-
----
-
-### 한국어
-
-앱 상단 **▶ YouTube → 추천 피드 / 쇼츠 → Open preview**에서 내 유튜브를 Hermes 내부 브라우저로 엽니다. 개별 영상 URL을 넣을 필요가 없습니다. 기존 내부 브라우저의 로그인 상태를 사용하며, 외부 브라우저의 쿠키를 복사하거나 계정 정보를 읽지 않습니다. 설치 후 **Capabilities → Plugins → YouTube Dock**을 켜세요. 이 버전은 도킹형 패널 방식이며 전용 PIP 버튼은 없습니다.
+Report issues in this repository with Hermes version, OS and the failing step. Never attach cookies, tokens or account credentials. [MIT](LICENSE). Independent community software; not affiliated with YouTube, Google or Nous Research.

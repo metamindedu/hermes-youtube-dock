@@ -19,15 +19,18 @@ async function loadPlugin(locale = 'en') {
   const sdk = {
     Button: ({ children, type, ...props }) => React.createElement('button', { type, 'aria-label': props['aria-label'] }, children),
     Codicon: () => React.createElement('span', { 'aria-hidden': true }),
+    Switch: props => React.createElement('button', { role: 'switch', 'aria-checked': props.checked }),
     MessageTextContent: ({ text }) => React.createElement('span', { 'data-preview-markdown': text }),
     PALETTE_AREA: 'palette', TITLEBAR_AREAS: { right: 'titleBar.right' },
     Popover: ({ children, open }) => React.createElement('div', { 'data-open': String(open) }, children),
     PopoverContent: wrap('aside'), PopoverTrigger: wrap('div'),
-    atom: initial => { let value = initial; return { get: () => value, set: next => { value = next } } },
+    atom: initial => { let value = initial; return { get: () => value, set: next => { value = next }, listen: () => () => {} } },
+    host: { state: {}, notify: () => {} }, translateNow: key => key,
     usePluginI18n: () => t, useValue: value => value.get()
   }
   const ctx = {
     i18n: { register: value => { bundles = value }, t },
+    storage: { get: () => false }, // Existing launcher regression: explicitly opt out of manual mode.
     register: contribution => { contributions.push(contribution); return () => {} },
     onDispose: dispose => disposers.push(dispose)
   }
@@ -100,6 +103,14 @@ test('Korean and unsupported locales use translated labels and the English fallb
   assert.match(korean.render(), /쇼츠/)
   const fallback = await loadPlugin('fr')
   assert.match(fallback.render(), /Recommended videos/)
+})
+
+test('legacy destination has no automatic pin capture handler', async () => {
+  const plugin = await loadPlugin()
+  for (const destination of plugin.module.DESTINATIONS) {
+    const section = plugin.module.Destination({ destination, t: key => key })
+    assert.equal(section.props.children[2].props.onClickCapture, undefined)
+  }
 })
 
 test('native Hermes decoder preserves and resolves both visible preview links', {
